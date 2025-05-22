@@ -1,35 +1,34 @@
 const express = require("express");
+const connectDB = require("./config/database.js");
+const User = require("./model/user.js");
 
 const app = express();
 const port = 3000;
 
-/**
- app.use("/test",(req,res,next) => {
-  console.log("Route Handler 1");
-  next()
-})
- */
+app.post("/signup", async (req, res) => {
+  const userObj = {
+    firstName: "Azad",
+    lastName: "Raj",
+    emailId: "azad@raj.com",
+    password: "123@Aza",
+  };
 
-app.get("/user", (req, res) => {
-  res.send("User api requested for the user data");
-});
+  //creating new instance of "User" model
+  const user = new User(userObj);
 
-//Making a dummy auth middleware for admin
-
-app.use("/admin", (req, res, next) => {
-  const token = 12345;
-
-  if (token === 12345) {
-    next();
-  } else {
-    res.status(401).send("The client is not an admin");
+  try {
+    await user.save();
+    res.send("New User added successfully");
+  } catch (err) {
+    res.status(400).send("Error saving the user" + err.message);
   }
 });
 
-app.get("/admin/user-data", (req, res) => {
-  res.send("User data sent");
-});
-
-app.listen(port, () => {
-  console.log("Server is running on port: " + port);
-});
+connectDB()
+  .then(() => console.log("Database connected"))
+  .then(() => {
+    app.listen(port, () => {
+      console.log("Server is running on port: " + port);
+    });
+  })
+  .catch((err) => console.log("Error connecting to the DB: ", err));
