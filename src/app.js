@@ -5,16 +5,105 @@ const User = require("./model/user.js");
 const app = express();
 const port = 3000;
 
-app.post("/signup", async (req, res) => {
-  const userObj = {
-    firstName: "Azad",
-    lastName: "Raj",
-    emailId: "azad@raj.com",
-    password: "123@Aza",
-  };
+//Adding middleware so that it can automatically parse the json to js object
 
+//Here didn't provided the route so that it will run for every request
+
+app.use(express.json());
+
+//Getting a single user from the DB :
+
+//User - Model of the schema, db
+app.get("/user", async (req, res) => {
+  const userEmail = req.body.emailId;
+  try {
+    const singleUser = await User.find({ emailId: userEmail });
+    if (!singleUser.length) {
+      res.status(400).send("No Users Found");
+    } else {
+      res.send(singleUser);
+    }
+  } catch (err) {
+    res.status(400).send("Something went wrong");
+  }
+});
+
+//Getting all the users - will use /feed as route
+
+app.get("/feed", async (req, res) => {
+  try {
+    const allUsers = await User.find({});
+    if (!allUsers.length) {
+      res.status(400).send("Users not found");
+    } else {
+      res.send(allUsers);
+    }
+  } catch (err) {
+    res.status(400).send("Something went wrong: " + err.message);
+  }
+});
+
+//Using findOne method of mongoose :
+
+app.get("/findOne", async (req, res) => {
+  const userEmail = req.body.emailId;
+
+  try {
+    const oneUser = await User.findOne({ emailId: userEmail });
+
+    if (oneUser.length === 0) {
+      res.status(400).send("User not found in DB");
+    } else {
+      res.send(oneUser);
+    }
+  } catch (err) {
+    res.status(400).send("Something went wrong: " + err);
+  }
+});
+
+//Using findById :
+
+app.get("/findById", async (req, res) => {
+  const userId = req.body._id;
+  try {
+    const userById = await User.findById(userId);
+
+    if (!userById) {
+      res.status(400).send("User not found");
+    } else {
+      res.send(userById);
+    }
+  } catch (err) {
+    res.status(400).send("Something went wrong: " + err);
+  }
+});
+
+//Making a delete HTTP method and will use findByIdAndDelete()
+
+app.delete("/user", (req, res) => {
+  const userId = req.body.id;
+  console.log("User id: " + userId);
+  try {
+    const deletedItem = User.findByIdAndDelete({ _id: userId });
+    if (!deletedItem) {
+      res.status(400).send("User not found in the DB");
+    } else {
+      res.send("User deleted successfully");
+    }
+  } catch (err) {
+    res.status(400).send("Something went wrong: " + err);
+  }
+});
+
+//Making an update HTTP method API: Using findByIdAndUpdate
+
+app.patch("/user", (req, res) => {
+  let userId = req.body.id;
+});
+
+app.post("/signup", async (req, res) => {
   //creating new instance of "User" model
-  const user = new User(userObj);
+  const user = new User(req.body);
 
   try {
     await user.save();
