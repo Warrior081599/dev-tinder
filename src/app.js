@@ -80,11 +80,12 @@ app.get("/findById", async (req, res) => {
 
 //Making a delete HTTP method and will use findByIdAndDelete()
 
-app.delete("/user", (req, res) => {
+app.delete("/user", async (req, res) => {
   const userId = req.body.id;
-  console.log("User id: " + userId);
+
   try {
-    const deletedItem = User.findByIdAndDelete({ _id: userId });
+    const deletedItem = await User.findByIdAndDelete({ _id: userId });
+    console.log("Deleted Item: " + deletedItem);
     if (!deletedItem) {
       res.status(400).send("User not found in the DB");
     } else {
