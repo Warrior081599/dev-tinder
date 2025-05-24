@@ -98,8 +98,35 @@ app.delete("/user", async (req, res) => {
 
 //Making an update HTTP method API: Using findByIdAndUpdate
 
-app.patch("/user", (req, res) => {
-  let userId = req.body.id;
+app.patch("/user/:userId", async (req, res) => {
+  let userId = req.params?.userId;
+  let updatedValue = req.body;
+
+  const user = await User.findByIdAndUpdate(userId, updatedValue, {
+    runValidators: true,
+  });
+  try {
+    const ALLOWED_UPDATES = ["about", "gender", "age", "skills"];
+    const isUpdateAllowed = Object.keys(updatedValue).every((ele) =>
+      ALLOWED_UPDATES.includes(ele)
+    );
+
+    if (!isUpdateAllowed) {
+      throw new Error("Update not allowed");
+    }
+
+    if (updatedValue?.skills?.length > 10) {
+      throw new Error("Skills can't be more than 10");
+    }
+
+    if (!userId?.length) {
+      res.status(400).send("User not present in the DB");
+    } else {
+      res.send("user updated successfully");
+    }
+  } catch (err) {
+    res.status(400).send("Something went wrong: " + err);
+  }
 });
 
 app.post("/signup", async (req, res) => {
