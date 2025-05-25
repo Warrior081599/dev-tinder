@@ -1,6 +1,9 @@
 const express = require("express");
 const connectDB = require("./config/database.js");
 const User = require("./model/user.js");
+const bcrypt = require("bcrypt");
+const cookieParser = require("cookie-parser");
+const { validateSignupData } = require("./utils/validation.js");
 
 const app = express();
 const port = 3000;
@@ -10,6 +13,79 @@ const port = 3000;
 //Here didn't provided the route so that it will run for every request
 
 app.use(express.json());
+
+//Making the cookie parser run on each route call
+
+app.use(cookieParser());
+
+//Sign-up API:
+
+app.post("/signup", async (req, res) => {
+  try {
+    //Validation of the data:
+
+    validateSignupData(req);
+    const { firstName, lastName, emailId, password } = req.body;
+
+    //Encrypt the password:
+    const passwordHash = await bcrypt.hash(password, 10);
+    console.log(passwordHash);
+
+    //creating new instance of "User" model
+    const user = new User({
+      firstName,
+      lastName,
+      emailId,
+      password: passwordHash,
+    });
+    await user.save();
+    res.send("New User added successfully");
+  } catch (err) {
+    res.status(400).send("Error saving the user" + err.message);
+  }
+});
+
+//Log-in API:
+
+app.post("/login", async (req, res) => {
+  //Destructuring of email and pass
+  const { emailId, password } = req.body;
+
+  //checking if the email is there in the DB
+
+  try {
+    const user = await User.findOne({ emailId: emailId });
+
+    if (!user) {
+      throw new Error("User email is not present in the DB");
+    }
+    const isPasswordMatched = await bcrypt.compare(password, user.password);
+    if (isPasswordMatched) {
+      //Create a JWT web token:
+
+      //Add the token to cookie and then send back to the client
+
+      res.cookie("token", "xhdwijdiwJAIJSWI8ishissi979.#$%ij");
+      res.send("Login Successfully");
+    } else {
+      throw new Error("Entered password doesnot matched");
+    }
+  } catch (err) {
+    res.status(400).send("Something went wrong: " + err.message);
+  }
+});
+
+//Making a profile API:
+
+app.get("/profile", async (req, res) => {
+  try {
+    const getCookie = req.cookies;
+    console.log(getCookie);
+    res.send(getCookie);
+  } catch (err) {
+    res.status(400).send("Error: " + err.message);
+  }
+});
 
 //Getting a single user from the DB :
 
@@ -106,7 +182,7 @@ app.patch("/user/:userId", async (req, res) => {
     runValidators: true,
   });
   try {
-    const ALLOWED_UPDATES = ["about", "gender", "age", "skills"];
+    const ALLOWED_UPDATES = ["photoUrl", "about", "gender", "age", "skills"];
     const isUpdateAllowed = Object.keys(updatedValue).every((ele) =>
       ALLOWED_UPDATES.includes(ele)
     );
@@ -126,18 +202,6 @@ app.patch("/user/:userId", async (req, res) => {
     }
   } catch (err) {
     res.status(400).send("Something went wrong: " + err);
-  }
-});
-
-app.post("/signup", async (req, res) => {
-  //creating new instance of "User" model
-  const user = new User(req.body);
-
-  try {
-    await user.save();
-    res.send("New User added successfully");
-  } catch (err) {
-    res.status(400).send("Error saving the user" + err.message);
   }
 });
 
