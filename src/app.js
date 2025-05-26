@@ -3,7 +3,9 @@ const connectDB = require("./config/database.js");
 const User = require("./model/user.js");
 const bcrypt = require("bcrypt");
 const cookieParser = require("cookie-parser");
+const jwt = require("jsonwebtoken");
 const { validateSignupData } = require("./utils/validation.js");
+const { userAuth } = require("./middleware/auth.js");
 
 const app = express();
 const port = 3000;
@@ -63,9 +65,11 @@ app.post("/login", async (req, res) => {
     if (isPasswordMatched) {
       //Create a JWT web token:
 
+      const token = await jwt.sign({ _id: user._id }, "DEV@$790");
+
       //Add the token to cookie and then send back to the client
 
-      res.cookie("token", "xhdwijdiwJAIJSWI8ishissi979.#$%ij");
+      res.cookie("token", token);
       res.send("Login Successfully");
     } else {
       throw new Error("Entered password doesnot matched");
@@ -77,11 +81,10 @@ app.post("/login", async (req, res) => {
 
 //Making a profile API:
 
-app.get("/profile", async (req, res) => {
+app.get("/profile", userAuth, async (req, res) => {
   try {
-    const getCookie = req.cookies;
-    console.log(getCookie);
-    res.send(getCookie);
+    const user = req.user;
+    res.send(user);
   } catch (err) {
     res.status(400).send("Error: " + err.message);
   }
