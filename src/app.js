@@ -65,11 +65,15 @@ app.post("/login", async (req, res) => {
     if (isPasswordMatched) {
       //Create a JWT web token:
 
-      const token = await jwt.sign({ _id: user._id }, "DEV@$790");
+      const token = await jwt.sign({ _id: user._id }, "DEV@Tinder$790", {
+        expiresIn: "7d",
+      });
 
       //Add the token to cookie and then send back to the client
 
-      res.cookie("token", token);
+      res.cookie("token", token, {
+        expires: new Date(Date.now() + 8 * 3600000),
+      });
       res.send("Login Successfully");
     } else {
       throw new Error("Entered password doesnot matched");
@@ -88,6 +92,16 @@ app.get("/profile", userAuth, async (req, res) => {
   } catch (err) {
     res.status(400).send("Error: " + err.message);
   }
+});
+
+//Making send connection request API:
+
+app.post("/send-connection-request", userAuth, async (req, res) => {
+  const user = req.user;
+
+  //Sending the connection request:
+
+  res.send(user.firstName + " sent the coonection request");
 });
 
 //Getting a single user from the DB :
