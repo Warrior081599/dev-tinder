@@ -70,11 +70,15 @@ const userSchema = new Schema(
     gender: {
       type: String,
       trim: true,
-      validate(value) {
-        if (!["male", "female", "others"].includes(value)) {
-          throw new Error("Not a valid gender like (male,female or others) ");
-        }
+      enum: {
+        values: ["male", "female", "other"],
+        message: `{VALUE} is not a valid gender type`,
       },
+      // validate(value) {
+      //   if (!["male", "female", "others"].includes(value)) {
+      //     throw new Error("Not a valid gender like (male,female or others) ");
+      //   }
+      // },
     },
   },
   { timestamps: true }
