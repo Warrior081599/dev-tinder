@@ -2,6 +2,7 @@ const express = require("express");
 const userRouter = express.Router();
 const { userAuth } = require("../middleware/auth");
 const ConnectionRequest = require("../model/connectionRequest");
+const User = require("../model/user");
 
 const USER_SAFE_DATA = "firstName lastName photoUrl age gender about skills";
 
@@ -53,4 +54,73 @@ userRouter.get("/user/connections", userAuth, async (req, res) => {
   }
 });
 
+/**
+ * Api to get the feed same like the Tinder so we need to keep away the below things:
+ * We don't include our own card
+ * We don't include our own connections
+ * The profile we have ignored
+ * Alreaady sent request
+ */
+
+//Api for the getting the feed:
+
+userRouter.get("/feed", userAuth, async (req, res) => {
+  try {
+    const loggedInUser = req.user;
+
+    const page = parseInt(req.query.page) || 1;
+    let limit = parseInt(req.query.limit) || 10;
+
+    if (limit > 50) {
+      limit = 50;
+    }
+
+    /* 
+    We can also write like the login using ternary opearor like limit = limit > 50 ? 50 : limit 
+    */
+
+    let skip = (page - 1) * limit;
+
+    const connectionRequests = await ConnectionRequest.find({
+      $or: [{ fromUserId: loggedInUser._id }, { toUserId: loggedInUser._id }],
+    }).select("fromUserId toUserId");
+
+    const hideUsersFromFeed = new Set();
+    connectionRequests.forEach((req) => {
+      hideUsersFromFeed.add(req.fromUserId.toString());
+      hideUsersFromFeed.add(req.toUserId.toString());
+    });
+
+    const users = await User.find({
+      $and: [
+        { _id: { $nin: Array.from(hideUsersFromFeed) } },
+        { _id: { $ne: loggedInUser._id } },
+      ],
+    })
+      .select(USER_SAFE_DATA)
+      .skip(skip)
+      .limit(limit);
+
+    res.json({ data: users });
+  } catch (err) {
+    res.status(400).send("Error: " + err.message);
+  }
+});
+
 module.exports = userRouter;
+
+/* 
+
+NOTES:
+
+/feed?page=1&limit=10 => 1-10 => .skip(0) & .limit(10)
+
+/feed?page=2&limit=10 => 11-20 => .skip(10) & .limit(10)
+
+/feed?page=3&limit=10 => 21-30 => .skip(20) & .limit(10)
+
+/feed?page=4&limit=10 => 21-30 => .skip(20) & .limit(10)
+
+skip = (page-1)*limit;
+
+*/
