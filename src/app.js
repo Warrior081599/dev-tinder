@@ -6,6 +6,7 @@ const profileRouter = require("./routes/profile.js");
 const requestRouter = require("./routes/request.js");
 // const User = require("./model/user.js");
 const userRouter = require("./routes/user.js");
+const cors = require("cors");
 
 const app = express();
 const port = 3000;
@@ -19,6 +20,16 @@ app.use(express.json());
 //Making the cookie parser run on each route call
 
 app.use(cookieParser());
+
+//For solving the cors error making a middleware here
+
+app.use(
+  "/",
+  cors({
+    origin: "http://localhost:5173/",
+    credentials: true,
+  })
+);
 
 app.use("/", authRouter);
 app.use("/", profileRouter);

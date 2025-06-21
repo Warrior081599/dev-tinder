@@ -16,7 +16,6 @@ authRouter.post("/signup", async (req, res) => {
 
     //Encrypt the password:
     const passwordHash = await bcrypt.hash(password, 10);
-    console.log(passwordHash);
 
     //creating new instance of "User" model
     const user = new User({
@@ -57,7 +56,7 @@ authRouter.post("/login", async (req, res) => {
       res.cookie("token", token, {
         expires: new Date(Date.now() + SEVEN_DAYS),
       });
-      res.send("Login Successfully");
+      res.send(user);
     } else {
       throw new Error("Entered password doesnot matched");
     }
